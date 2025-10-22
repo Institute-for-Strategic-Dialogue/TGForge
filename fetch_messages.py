@@ -5,6 +5,7 @@ import re
 from collections import Counter
 from urllib.parse import urlparse
 from telethon.errors import FloodWaitError
+from telethon import functions
 import streamlit as st
 from tenacity import retry, stop_after_attempt, retry_if_exception_type
 from typing import Optional, Dict, Any
