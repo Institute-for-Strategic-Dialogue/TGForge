@@ -74,6 +74,15 @@ class MessageProcessor:
         replies = message.replies.replies if message.replies else 0
         forwards = message.forwards if message.forwards else 0
         return reactions + replies + forwards
+
+    def determine_engagement_type(self, message, parent_id: Optional[int]) -> str:
+        """Determine if message is a SHARE (forward), REPLY (comment), or ORIGINAL post"""
+        if message.forward:
+            return "SHARE"
+        elif parent_id is not None:
+            return "REPLY"
+        else:
+            return "ORIGINAL"
         
     def extract_geo_location(self, message) -> str:
         """Extract geo-location if available"""
@@ -126,6 +135,7 @@ class MessageProcessor:
             "Forwards": message.forwards if message.forwards else None,
             "Replies": message.replies.replies if message.replies else "No Replies",
             "Total Engagement": self.calculate_total_engagement(message),
+            "Engagement Type": self.determine_engagement_type(message, parent_id),
             "Reply To Message Snippet": None,
             "Reply To Message Sender": None,
             "Grouped ID": str(message.grouped_id) if message.grouped_id else "Not Available",
