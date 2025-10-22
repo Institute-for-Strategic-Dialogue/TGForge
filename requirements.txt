@@ -1,0 +1,9 @@
+telethon==1.36.0
+aioconsole
+pandas
+nest_asyncio
+streamlit
+python-docx
+openpyxl
+tenacity
+tabulate
