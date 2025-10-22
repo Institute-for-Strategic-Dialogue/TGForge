@@ -48,7 +48,14 @@ class MessageProcessor:
         if not message.reactions:
             return 0
         return sum([reaction.count for reaction in message.reactions.results])
-    
+
+    def calculate_total_engagement(self, message) -> int:
+        """Calculate total engagement (reactions + replies + forwards)"""
+        reactions = self.extract_reactions(message)
+        replies = message.replies.replies if message.replies else 0
+        forwards = message.forwards if message.forwards else 0
+        return reactions + replies + forwards
+        
     def extract_geo_location(self, message) -> str:
         """Extract geo-location if available"""
         if message.geo:
@@ -97,6 +104,7 @@ class MessageProcessor:
             "Views": message.views if message.views else None,
             "Forwards": message.forwards if message.forwards else None,
             "Replies": message.replies.replies if message.replies else "No Replies",
+            "Total Engagement": self.calculate_total_engagement(message),
             "Reply To Message Snippet": None,
             "Reply To Message Sender": None,
             "Grouped ID": str(message.grouped_id) if message.grouped_id else "Not Available",
