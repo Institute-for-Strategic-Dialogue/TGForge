@@ -14,7 +14,7 @@ from typing import Optional, Dict, Any
 class MessageProcessor:
     """Processes Telegram messages into structured data"""
     
-    def __init__(self, channel):
+    def __init__(self, channel, participant_count=None):
         self.channel = channel
         self.channel_name = channel.title if hasattr(channel, 'title') else str(channel)
         self.channel_username = getattr(channel, 'username', None)
