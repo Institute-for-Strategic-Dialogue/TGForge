@@ -38,7 +38,24 @@ class MessageProcessor:
         if not text:
             return []
         return re.findall(r"(https?://\S+)", text)
-    
+
+    def extract_domains(self, text: Optional[str]) -> list:
+        """Extract domains from URLs in message text"""
+        if not text:
+            return []
+        
+        urls = self.extract_urls(text)
+        domains = []
+        
+        for url in urls:
+            parsed = urlparse(url)
+            if parsed.netloc:
+                # Remove 'www.' prefix and clean up (same logic as analytics)
+                domain = re.sub(r"[^\w.-]+$", "", re.sub(r"^www\.", "", parsed.netloc)).lower()
+                domains.append(domain)
+        
+        return domains
+        
     def extract_hashtags(self, text: Optional[str]) -> list:
         """Extract hashtags from message text"""
         if not text:
@@ -102,6 +119,7 @@ class MessageProcessor:
             "Geo-location": self.extract_geo_location(message),
             "Hashtags": self.extract_hashtags(message.text),
             "URLs Shared": self.extract_urls(message.text),
+            "Domains Shared": self.extract_domains(message.text),
             "Reactions": self.extract_reactions(message),
             "Message URL": self.build_message_url(message.id),
             "Views": message.views if message.views else None,
