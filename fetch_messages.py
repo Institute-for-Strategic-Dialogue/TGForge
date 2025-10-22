@@ -140,6 +140,7 @@ class MessageProcessor:
             "Reply To Message Sender": None,
             "Grouped ID": str(message.grouped_id) if message.grouped_id else "Not Available",
             "Platform": "Telegram",
+            "Site": "t.me",
         }
     
     def process_reply(self, reply, parent_message) -> Dict[str, Any]:
