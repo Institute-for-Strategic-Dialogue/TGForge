@@ -17,6 +17,7 @@ class MessageProcessor:
         self.channel = channel
         self.channel_name = channel.title if hasattr(channel, 'title') else str(channel)
         self.channel_username = getattr(channel, 'username', None)
+        self.participant_count = participant_count
     
     def extract_sender_info(self, message) -> Dict[str, Any]:
         """Extract sender user ID and username"""
@@ -87,6 +88,7 @@ class MessageProcessor:
         
         return {
             "Channel": self.channel_name,
+            "Subscribers": self.participant_count,
             "Message ID": message.id,
             "Parent Message ID": parent_id,
             "Sender User ID": sender_info['user_id'],
@@ -108,6 +110,7 @@ class MessageProcessor:
             "Reply To Message Snippet": None,
             "Reply To Message Sender": None,
             "Grouped ID": str(message.grouped_id) if message.grouped_id else "Not Available",
+            "Platform": "Telegram",
         }
     
     def process_reply(self, reply, parent_message) -> Dict[str, Any]:
@@ -286,10 +289,19 @@ async def fetch_messages(client, channel_list, start_date=None, end_date=None, i
     for channel_name in channel_list:
         try:
             channel = await client.get_entity(channel_name)
-            processor = MessageProcessor(channel)
+            
+            # Fetch follower count once per channel
+            try:
+                result = await client(functions.channels.GetFullChannelRequest(channel=channel))
+                participant_count = result.full_chat.participants_count if hasattr(result.full_chat, "participants_count") else None
+            except Exception as e:
+                st.warning(f"Could not fetch follower count for {channel_name}: {e}")
+                participant_count = None
+            
+            processor = MessageProcessor(channel, participant_count)
             
             progress_text = st.empty()
-            progress_text.write(f"Processing channel: **{channel_name}**")
+            progress_text.write(f"Processing channel: **{channel_name}** ({participant_count:,} followers)" if participant_count else f"Processing channel: **{channel_name}**")
             offset_id = 0
             total_messages = []
         except ValueError:
