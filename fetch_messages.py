@@ -158,6 +158,7 @@ class MessageProcessor:
             "Domains Shared": self.extract_domains(message.text),
             "Reactions": self.extract_reactions(message),
             "Message URL": self.build_message_url(message.id),
+            "Original URL": self.build_original_url(message),
             "Views": message.views if message.views else None,
             "Forwards": message.forwards if message.forwards else None,
             "Replies": message.replies.replies if message.replies else 0,
