@@ -63,12 +63,23 @@ class MessageProcessor:
         return [tag for tag in text.split() if tag.startswith("#")]
 
     def extract_mentions(self, text: Optional[str]) -> list:
-        """Extract mentioned Telegram usernames from message text"""
+        """Extract mentioned Telegram usernames from t.me links in message text"""
         if not text:
             return []
-        # Find all @username mentions (letters, numbers, underscores, 5-32 chars)
-        mentions = re.findall(r'@([a-zA-Z0-9_]{5,32})', text)
-        return mentions
+        
+        # Find all t.me/ links and extract the username
+        # Pattern matches: t.me/username or t.me/username/12345
+        mentions = re.findall(r't\.me/([a-zA-Z0-9_]+)(?:/\d+)?', text)
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_mentions = []
+        for mention in mentions:
+            if mention not in seen:
+                seen.add(mention)
+                unique_mentions.append(mention)
+        
+        return unique_mentions
         
     def extract_reactions(self, message) -> int:
         """Count total reactions on a message"""
