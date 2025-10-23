@@ -341,6 +341,56 @@ class MessageAnalytics:
             self.generate_monthly_volume(start_date, end_date)
         )
 
+# ==================== THREAD AUTHOR BACKFILL ====================
+def backfill_thread_authors(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Backfill Thread Author by traversing the parent chain.
+    For each reply, find the top-level post (where Parent Message ID is None).
+    """
+    if df.empty:
+        return df
+    
+    def find_thread_author(row):
+        # If it's not a reply, no thread author
+        if pd.isna(row['Parent Message ID']) or row['Parent Message ID'] is None:
+            return None
+        
+        # Traverse up the parent chain to find the root
+        current_parent_id = row['Parent Message ID']
+        visited = set()  # Prevent infinite loops
+        max_depth = 50  # Safety limit
+        depth = 0
+        
+        while current_parent_id is not None and depth < max_depth:
+            # Prevent infinite loops
+            if current_parent_id in visited:
+                break
+            visited.add(current_parent_id)
+            depth += 1
+            
+            # Get the parent row
+            parent_row = df[df['Message ID'] == current_parent_id]
+            
+            if parent_row.empty:
+                # Can't find parent, fallback to immediate parent
+                return row.get('Reply To Message Sender', None)
+            
+            parent_row = parent_row.iloc[0]
+            
+            # If parent has no parent, this is the thread author!
+            if pd.isna(parent_row['Parent Message ID']) or parent_row['Parent Message ID'] is None:
+                return parent_row['Sender Username']
+            
+            # Move up the chain
+            current_parent_id = parent_row['Parent Message ID']
+        
+        # Fallback to Reply To Message Sender if we can't find root
+        return row.get('Reply To Message Sender', None)
+    
+    # Apply the function to find thread authors
+    df['Thread Author'] = df.apply(find_thread_author, axis=1)
+    
+    return df
 
 # ==================== MAIN FETCH FUNCTION ====================
 @retry(
@@ -464,6 +514,9 @@ async def fetch_messages(client, channel_list, start_date=None, end_date=None, i
         df[df["Grouped ID"] == "Not Available"], 
         dedup_df
     ]).sort_values(by=["Channel", "Message DateTime (UTC)"]).reset_index(drop=True)
+
+    # Backfill thread authors by traversing parent chain
+    df = backfill_thread_authors(df)
     
     # Run all analytics using the class
     analytics = MessageAnalytics(df)
