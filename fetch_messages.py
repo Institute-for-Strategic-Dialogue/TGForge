@@ -83,7 +83,19 @@ class MessageProcessor:
             return "REPLY"
         else:
             return "ORIGINAL"
-        
+    def determine_engaging_with(self, message, parent_message) -> Optional[str]:
+        """Determine who/what the user is engaging with"""
+        if message.forward:
+            return self.extract_forward_origin(message)
+        elif parent_message is not None:
+            # Get the sender of the parent message
+            if parent_message.sender and hasattr(parent_message.sender, "username"):
+                return parent_message.sender.username
+            else:
+                return "Not Available"
+        else:
+            return None
+            
     def extract_geo_location(self, message) -> str:
         """Extract geo-location if available"""
         if message.geo:
@@ -109,7 +121,7 @@ class MessageProcessor:
             return f"https://t.me/{self.channel_username}/{message_id}"
         return "No URL available"
     
-    def process_message(self, message, parent_id: Optional[int] = None) -> Dict[str, Any]:
+    def process_message(self, message, parent_id: Optional[int] = None, parent_message=None) -> Dict[str, Any]:
         """Convert a Telegram message to a structured dictionary"""
         sender_info = self.extract_sender_info(message)
         
@@ -133,9 +145,10 @@ class MessageProcessor:
             "Message URL": self.build_message_url(message.id),
             "Views": message.views if message.views else None,
             "Forwards": message.forwards if message.forwards else None,
-            "Replies": message.replies.replies if message.replies else "No Replies",
+            "Replies": message.replies.replies if message.replies else 0,
             "Total Engagement": self.calculate_total_engagement(message),
             "Engagement Type": self.determine_engagement_type(message, parent_id),
+            "Engaging With": self.determine_engaging_with(message, parent_message),
             "Reply To Message Snippet": None,
             "Reply To Message Sender": None,
             "Grouped ID": str(message.grouped_id) if message.grouped_id else "Not Available",
@@ -145,7 +158,7 @@ class MessageProcessor:
     
     def process_reply(self, reply, parent_message) -> Dict[str, Any]:
         """Process a reply/comment with context from parent message"""
-        reply_data = self.process_message(reply, parent_id=parent_message.id)
+        reply_data = self.process_message(reply, parent_id=parent_message.id, parent_message=parent_message)
         
         # Add reply-specific fields
         reply_data["Reply To Message Snippet"] = (
