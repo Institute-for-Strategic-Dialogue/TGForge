@@ -120,7 +120,22 @@ class MessageProcessor:
         if self.channel_username:
             return f"https://t.me/{self.channel_username}/{message_id}"
         return "No URL available"
-    
+
+    def build_original_url(self, message) -> str:
+        """Construct URL for the original post (if forwarded) or current post URL"""
+        # If it's a forward, try to get the original URL
+        if message.forward:
+            try:
+                if message.forward.chat and hasattr(message.forward.chat, "username"):
+                    original_username = message.forward.chat.username
+                    if original_username and message.forward.channel_post:
+                        return f"https://t.me/{original_username}/{message.forward.channel_post}"
+            except AttributeError:
+                pass
+        
+        # If not a forward or couldn't get original URL, return current message URL
+        return self.build_message_url(message.id)
+        
     def process_message(self, message, parent_id: Optional[int] = None, parent_message=None) -> Dict[str, Any]:
         """Convert a Telegram message to a structured dictionary"""
         sender_info = self.extract_sender_info(message)
