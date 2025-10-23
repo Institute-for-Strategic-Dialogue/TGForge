@@ -61,7 +61,15 @@ class MessageProcessor:
         if not text:
             return []
         return [tag for tag in text.split() if tag.startswith("#")]
-    
+
+    def extract_mentions(self, text: Optional[str]) -> list:
+        """Extract mentioned Telegram usernames from message text"""
+        if not text:
+            return []
+        # Find all @username mentions (letters, numbers, underscores, 5-32 chars)
+        mentions = re.findall(r'@([a-zA-Z0-9_]{5,32})', text)
+        return mentions
+        
     def extract_reactions(self, message) -> int:
         """Count total reactions on a message"""
         if not message.reactions:
@@ -154,6 +162,7 @@ class MessageProcessor:
             "Origin Username": self.extract_forward_origin(message),
             "Geo-location": self.extract_geo_location(message),
             "Hashtags": self.extract_hashtags(message.text),
+            "Mentioned Authors": self.extract_mentions(message.text),
             "URLs Shared": self.extract_urls(message.text),
             "Domains Shared": self.extract_domains(message.text),
             "Reactions": self.extract_reactions(message),
