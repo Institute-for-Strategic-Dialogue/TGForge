@@ -2,8 +2,7 @@ telethon==1.36.0
 aioconsole
 pandas
 nest_asyncio
-streamlit==1.19.0
-altair<5
+streamlit>=1.20
 python-docx
 openpyxl
 tenacity
